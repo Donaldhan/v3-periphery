@@ -17,12 +17,15 @@ abstract contract PoolInitializer is IPoolInitializer, PeripheryImmutableState {
         uint160 sqrtPriceX96
     ) external payable override returns (address pool) {
         require(token0 < token1);
+        // h获取交易池
         pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
 
         if (pool == address(0)) {
+            // 创建交易池
             pool = IUniswapV3Factory(factory).createPool(token0, token1, fee);
             IUniswapV3Pool(pool).initialize(sqrtPriceX96);
         } else {
+            //否则初始化流动性价格
             (uint160 sqrtPriceX96Existing, , , , , , ) = IUniswapV3Pool(pool).slot0();
             if (sqrtPriceX96Existing == 0) {
                 IUniswapV3Pool(pool).initialize(sqrtPriceX96);

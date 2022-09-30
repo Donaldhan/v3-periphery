@@ -4,8 +4,8 @@ pragma solidity >=0.5.0;
 /// @title Interface for permit
 /// @notice Interface used by DAI/CHAI for permit
 interface IERC20PermitAllowed {
-    /// @notice Approve the spender to spend some tokens via the holder signature
-    /// @dev This is the permit interface used by DAI and CHAI
+    /// @notice Approve the spender to spend some tokens via the holder signature 允许使用者通过签名花费持有的token
+    /// @dev This is the permit interface used by DAI and CHAI  DAI and CHAI使用
     /// @param holder The address of the token holder, the token owner
     /// @param spender The address of the token spender
     /// @param nonce The holder's nonce, increases at each call to permit

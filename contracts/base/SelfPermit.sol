@@ -7,12 +7,17 @@ import '@openzeppelin/contracts/drafts/IERC20Permit.sol';
 import '../interfaces/ISelfPermit.sol';
 import '../interfaces/external/IERC20PermitAllowed.sol';
 
-/// @title Self Permit
-/// @notice Functionality to call permit on any EIP-2612-compliant token for use in the route
+/// @title Self Permit EIP-2612 permit 
+/// @notice Functionality to call permit on any EIP-2612-compliant token for use in the route  
+/// 在路由中，任何兼容EIP-2612 token的permit调用
 /// @dev These functions are expected to be embedded in multicalls to allow EOAs to approve a contract and call a function
 /// that requires an approval in a single transaction.
+/// 这些功能希望嵌入在EOAs的multicalls， 允许合约和在交易中的approval 功能
 abstract contract SelfPermit is ISelfPermit {
     /// @inheritdoc ISelfPermit
+    /**
+     * 签名授权token permit，截止到deadline
+     */
     function selfPermit(
         address token,
         uint256 value,
@@ -25,6 +30,9 @@ abstract contract SelfPermit is ISelfPermit {
     }
 
     /// @inheritdoc ISelfPermit
+    /**
+     * 在授权的情况下，签名授权token permit，截止到deadline
+     */
     function selfPermitIfNecessary(
         address token,
         uint256 value,
@@ -37,6 +45,9 @@ abstract contract SelfPermit is ISelfPermit {
     }
 
     /// @inheritdoc ISelfPermit
+     /**
+     * 签名授权token permit，截止到deadline
+     */
     function selfPermitAllowed(
         address token,
         uint256 nonce,
@@ -49,6 +60,9 @@ abstract contract SelfPermit is ISelfPermit {
     }
 
     /// @inheritdoc ISelfPermit
+     /**
+     * 在授权的情况下，签名授权token permit，截止到deadline
+     */
     function selfPermitAllowedIfNecessary(
         address token,
         uint256 nonce,

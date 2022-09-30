@@ -4,13 +4,14 @@ pragma abicoder v2;
 
 import '../interfaces/IMulticall.sol';
 
-/// @title Multicall
+/// @title Multicall 代理方式Multicall合约
 /// @notice Enables calling multiple methods in a single call to the contract
 abstract contract Multicall is IMulticall {
     /// @inheritdoc IMulticall
     function multicall(bytes[] calldata data) public payable override returns (bytes[] memory results) {
         results = new bytes[](data.length);
         for (uint256 i = 0; i < data.length; i++) {
+            // 代理调用合约
             (bool success, bytes memory result) = address(this).delegatecall(data[i]);
 
             if (!success) {

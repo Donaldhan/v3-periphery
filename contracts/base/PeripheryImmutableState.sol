@@ -3,7 +3,7 @@ pragma solidity =0.7.6;
 
 import '../interfaces/IPeripheryImmutableState.sol';
 
-/// @title Immutable state
+/// @title Immutable state  Periphery 不可变状态
 /// @notice Immutable state used by periphery contracts
 abstract contract PeripheryImmutableState is IPeripheryImmutableState {
     /// @inheritdoc IPeripheryImmutableState

@@ -11,21 +11,21 @@ import './IPoolInitializer.sol';
 interface IV3Migrator is IMulticall, ISelfPermit, IPoolInitializer {
     struct MigrateParams {
         address pair; // the Uniswap v2-compatible pair
-        uint256 liquidityToMigrate; // expected to be balanceOf(msg.sender)
-        uint8 percentageToMigrate; // represented as a numerator over 100
+        uint256 liquidityToMigrate; // expected to be balanceOf(msg.sender) 发送者迁移的流动性，默认为余额
+        uint8 percentageToMigrate; // represented as a numerator over 100 迁移分母，默认为100
         address token0;
         address token1;
         uint24 fee;
         int24 tickLower;
         int24 tickUpper;
-        uint256 amount0Min; // must be discounted by percentageToMigrate
+        uint256 amount0Min; // must be discounted by percentageToMigrate 
         uint256 amount1Min; // must be discounted by percentageToMigrate
         address recipient;
         uint256 deadline;
         bool refundAsETH;
     }
 
-    /// @notice Migrates liquidity to v3 by burning v2 liquidity and minting a new position for v3
+    /// @notice Migrates liquidity to v3 by burning v2 liquidity and minting a new position for v3 迁移v2的流动性，到v3，并初始化位置信息
     /// @dev Slippage protection is enforced via `amount{0,1}Min`, which should be a discount of the expected values of
     /// the maximum amount of v3 liquidity that the v2 liquidity can get. For the special case of migrating to an
     /// out-of-range position, `amount{0,1}Min` may be set to 0, enforcing that the position remains out of range

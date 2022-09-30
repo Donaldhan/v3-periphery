@@ -6,12 +6,13 @@ pragma abicoder v2;
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
 /// require the pool to exist.
 interface IPoolInitializer {
-    /// @notice Creates a new pool if it does not exist, then initializes if not initialized
+    /// @notice Creates a new pool if it does not exist, then initializes if not initialized 创建一个不存在的交易池
     /// @dev This method can be bundled with others via IMulticall for the first action (e.g. mint) performed against a pool
+    /// 此方法在交易池的第一个动作中，可以通过IMulticall绑定使用
     /// @param token0 The contract address of token0 of the pool
     /// @param token1 The contract address of token1 of the pool
     /// @param fee The fee amount of the v3 pool for the specified token pair
-    /// @param sqrtPriceX96 The initial square root price of the pool as a Q64.96 value
+    /// @param sqrtPriceX96 The initial square root price of the pool as a Q64.96 value 流动池价格
     /// @return pool Returns the pool address based on the pair of tokens and fee, will return the newly created pool address if necessary
     function createAndInitializePoolIfNecessary(
         address token0,

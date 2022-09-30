@@ -11,7 +11,7 @@ import './IPeripheryPayments.sol';
 import './IPeripheryImmutableState.sol';
 import '../libraries/PoolAddress.sol';
 
-/// @title Non-fungible token for positions
+/// @title Non-fungible token for positions 非同质化位置管理器
 /// @notice Wraps Uniswap V3 positions in a non-fungible token interface which allows for them to be transferred
 /// and authorized.
 interface INonfungiblePositionManager is
@@ -22,20 +22,20 @@ interface INonfungiblePositionManager is
     IERC721Enumerable,
     IERC721Permit
 {
-    /// @notice Emitted when liquidity is increased for a position NFT
+    /// @notice Emitted when liquidity is increased for a position NFT 增加NFT流动性事件
     /// @dev Also emitted when a token is minted
     /// @param tokenId The ID of the token for which liquidity was increased
     /// @param liquidity The amount by which liquidity for the NFT position was increased
     /// @param amount0 The amount of token0 that was paid for the increase in liquidity
     /// @param amount1 The amount of token1 that was paid for the increase in liquidity
     event IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
-    /// @notice Emitted when liquidity is decreased for a position NFT
+    /// @notice Emitted when liquidity is decreased for a position NFT 减少NFT流动性事件
     /// @param tokenId The ID of the token for which liquidity was decreased
     /// @param liquidity The amount by which liquidity for the NFT position was decreased
     /// @param amount0 The amount of token0 that was accounted for the decrease in liquidity
     /// @param amount1 The amount of token1 that was accounted for the decrease in liquidity
     event DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
-    /// @notice Emitted when tokens are collected for a position NFT
+    /// @notice Emitted when tokens are collected for a position NFT 收集位置token事件
     /// @dev The amounts reported may not be exactly equivalent to the amounts transferred, due to rounding behavior
     /// @param tokenId The ID of the token for which underlying tokens were collected
     /// @param recipient The address of the account that received the collected tokens
@@ -43,11 +43,11 @@ interface INonfungiblePositionManager is
     /// @param amount1 The amount of token1 owed to the position that was collected
     event Collect(uint256 indexed tokenId, address recipient, uint256 amount0, uint256 amount1);
 
-    /// @notice Returns the position information associated with a given token ID.
+    /// @notice Returns the position information associated with a given token ID. 返回给定token的关联位置信息
     /// @dev Throws if the token ID is not valid.
     /// @param tokenId The ID of the token that represents the position
-    /// @return nonce The nonce for permits
-    /// @return operator The address that is approved for spending
+    /// @return nonce The nonce for permits permits nonce
+    /// @return operator The address that is approved for spending 操作者地址
     /// @return token0 The address of the token0 for a specific pool
     /// @return token1 The address of the token1 for a specific pool
     /// @return fee The fee associated with the pool
@@ -75,7 +75,9 @@ interface INonfungiblePositionManager is
             uint128 tokensOwed0,
             uint128 tokensOwed1
         );
-
+     /**
+      * mint 流动性参数
+      */
     struct MintParams {
         address token0;
         address token1;
@@ -90,9 +92,10 @@ interface INonfungiblePositionManager is
         uint256 deadline;
     }
 
-    /// @notice Creates a new position wrapped in a NFT
+    /// @notice Creates a new position wrapped in a NFT 创建一个ntf的包装位置
     /// @dev Call this when the pool does exist and is initialized. Note that if the pool is created but not initialized
     /// a method does not exist, i.e. the pool is assumed to be initialized.
+    //  当调用此方法，交易池不存在，将会初始化一个新的交易池。若果交易池没有初始化方法，池的状态将会已初始化
     /// @param params The params necessary to mint a position, encoded as `MintParams` in calldata
     /// @return tokenId The ID of the token that represents the minted position
     /// @return liquidity The amount of liquidity for this position
@@ -107,7 +110,9 @@ interface INonfungiblePositionManager is
             uint256 amount0,
             uint256 amount1
         );
-
+    /**
+     * 增加流动性参数
+     */
     struct IncreaseLiquidityParams {
         uint256 tokenId;
         uint256 amount0Desired;
@@ -117,7 +122,7 @@ interface INonfungiblePositionManager is
         uint256 deadline;
     }
 
-    /// @notice Increases the amount of liquidity in a position, with tokens paid by the `msg.sender`
+    /// @notice Increases the amount of liquidity in a position, with tokens paid by the `msg.sender` 增加流动性
     /// @param params tokenId The ID of the token for which liquidity is being increased,
     /// amount0Desired The desired amount of token0 to be spent,
     /// amount1Desired The desired amount of token1 to be spent,
@@ -135,7 +140,9 @@ interface INonfungiblePositionManager is
             uint256 amount0,
             uint256 amount1
         );
-
+    /**
+     * 减少流动性参数
+     */
     struct DecreaseLiquidityParams {
         uint256 tokenId;
         uint128 liquidity;
@@ -144,7 +151,7 @@ interface INonfungiblePositionManager is
         uint256 deadline;
     }
 
-    /// @notice Decreases the amount of liquidity in a position and accounts it to the position
+    /// @notice Decreases the amount of liquidity in a position and accounts it to the position 奖励给定位置和账号的流动性
     /// @param params tokenId The ID of the token for which liquidity is being decreased,
     /// amount The amount by which liquidity will be decreased,
     /// amount0Min The minimum amount of token0 that should be accounted for the burned liquidity,
@@ -156,7 +163,9 @@ interface INonfungiblePositionManager is
         external
         payable
         returns (uint256 amount0, uint256 amount1);
-
+   /**
+    * 收集参数
+    */
     struct CollectParams {
         uint256 tokenId;
         address recipient;
@@ -165,6 +174,7 @@ interface INonfungiblePositionManager is
     }
 
     /// @notice Collects up to a maximum amount of fees owed to a specific position to the recipient
+    //  收集给定位置下，收益的最大费用给接受者
     /// @param params tokenId The ID of the NFT for which tokens are being collected,
     /// recipient The account that should receive the tokens,
     /// amount0Max The maximum amount of token0 to collect,
@@ -175,6 +185,7 @@ interface INonfungiblePositionManager is
 
     /// @notice Burns a token ID, which deletes it from the NFT contract. The token must have 0 liquidity and all tokens
     /// must be collected first.
+    // 销毁tokenId， 从NFT合约，token合约的流动性为0， 所有token第一次收集
     /// @param tokenId The ID of the token that is being burned
     function burn(uint256 tokenId) external payable;
 }
