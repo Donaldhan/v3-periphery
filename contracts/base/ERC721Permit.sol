@@ -5,20 +5,20 @@ import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
 import '../libraries/ChainId.sol';
-import '../interfaces/external/IERC1271.sol';
+import '../interfaces/external/IERC1271.sol'; 
 import '../interfaces/IERC721Permit.sol';
 import './BlockTimestamp.sol';
 
 /// @title ERC721 with permit
 /// @notice Nonfungible tokens that support an approve via signature, i.e. permit
 abstract contract ERC721Permit is BlockTimestamp, ERC721, IERC721Permit {
-    /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
+    /// @dev Gets the current nonce for a token ID and then increments it, returning the original value 原子增加tokenId的nonce
     function _getAndIncrementNonce(uint256 tokenId) internal virtual returns (uint256);
 
-    /// @dev The hash of the name used in the permit signature verification
+    /// @dev The hash of the name used in the permit signature verification name hash 
     bytes32 private immutable nameHash;
 
-    /// @dev The hash of the version string used in the permit signature verification
+    /// @dev The hash of the version string used in the permit signature verification 版本hash
     bytes32 private immutable versionHash;
 
     /// @notice Computes the nameHash and versionHash
@@ -27,11 +27,12 @@ abstract contract ERC721Permit is BlockTimestamp, ERC721, IERC721Permit {
         string memory symbol_,
         string memory version_
     ) ERC721(name_, symbol_) {
+        //初始化name和版本hash
         nameHash = keccak256(bytes(name_));
         versionHash = keccak256(bytes(version_));
     }
 
-    /// @inheritdoc IERC721Permit
+    /// @inheritdoc IERC721Permit 域名分割符
     function DOMAIN_SEPARATOR() public view override returns (bytes32) {
         return
             keccak256(
@@ -46,16 +47,16 @@ abstract contract ERC721Permit is BlockTimestamp, ERC721, IERC721Permit {
             );
     }
 
-    /// @inheritdoc IERC721Permit
+    /// @inheritdoc IERC721Permit 721允许类型hash
     /// @dev Value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
     bytes32 public constant override PERMIT_TYPEHASH =
         0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
-    /// @inheritdoc IERC721Permit
+    /// @inheritdoc IERC721Permit 允许使用NFT
     function permit(
         address spender,
         uint256 tokenId,
-        uint256 deadline,
+        uint256 deadline, //截止时间
         uint8 v,
         bytes32 r,
         bytes32 s
@@ -71,11 +72,13 @@ abstract contract ERC721Permit is BlockTimestamp, ERC721, IERC721Permit {
                 )
             );
         address owner = ownerOf(tokenId);
+        //不能为原始拥有者
         require(spender != owner, 'ERC721Permit: approval to current owner');
 
-        if (Address.isContract(owner)) {
+        if (Address.isContract(owner)) { // 如果为合约，则校验签名
             require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e, 'Unauthorized');
         } else {
+            //否者验证签名者地址
             address recoveredAddress = ecrecover(digest, v, r, s);
             require(recoveredAddress != address(0), 'Invalid signature');
             require(recoveredAddress == owner, 'Unauthorized');

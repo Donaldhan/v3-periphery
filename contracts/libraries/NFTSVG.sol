@@ -5,7 +5,7 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '@uniswap/v3-core/contracts/libraries/BitMath.sol';
 import 'base64-sol/base64.sol';
 
-/// @title NFTSVG
+/// @title NFTSVG NFT的矢量图
 /// @notice Provides a function for generating an SVG associated with a Uniswap NFT
 library NFTSVG {
     using Strings for uint256;
@@ -20,17 +20,18 @@ library NFTSVG {
     string constant curve8 = 'M1 1C1 97 49 145 145 145';
 
     struct SVGParams {
+        //交易池相关信息
         string quoteToken;
         string baseToken;
         address poolAddress;
         string quoteTokenSymbol;
         string baseTokenSymbol;
         string feeTier;
-        int24 tickLower;
+        int24 tickLower; //tick的上下限
         int24 tickUpper;
         int24 tickSpacing;
         int8 overRange;
-        uint256 tokenId;
+        uint256 tokenId;//token Id
         string color0;
         string color1;
         string color2;
@@ -42,7 +43,7 @@ library NFTSVG {
         string x3;
         string y3;
     }
-
+    ///生成NFT SVG
     function generateSVG(SVGParams memory params) internal pure returns (string memory svg) {
         /*
         address: "0xe8ab59d3bcde16a29912de83a90eb39628cfc163",

@@ -3,7 +3,7 @@ pragma solidity >=0.5.0;
 
 import './INonfungiblePositionManager.sol';
 
-/// @title Describes position NFT tokens via URI
+/// @title Describes position NFT tokens via URI 通过urk描述一个NFT token的位置
 interface INonfungibleTokenPositionDescriptor {
     /// @notice Produces the URI describing a particular token ID for a position manager
     /// @dev Note this URI may be a data: URI with the JSON contents directly inlined

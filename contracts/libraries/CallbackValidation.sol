@@ -4,9 +4,9 @@ pragma solidity =0.7.6;
 import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import './PoolAddress.sol';
 
-/// @notice Provides validation for callbacks from Uniswap V3 Pools
+/// @notice Provides validation for callbacks from Uniswap V3 Pools Uniswap V3 Pools回调校验
 library CallbackValidation {
-    /// @notice Returns the address of a valid Uniswap V3 Pool
+    /// @notice Returns the address of a valid Uniswap V3 Pool 返回有效池的地址
     /// @param factory The contract address of the Uniswap V3 factory
     /// @param tokenA The contract address of either token0 or token1
     /// @param tokenB The contract address of the other token

@@ -23,7 +23,7 @@ library NFTDescriptor {
     using HexStrings for uint256;
 
     uint256 constant sqrt10X128 = 1076067327063303206878105757264492625226;
-
+    //构造token URL参数
     struct ConstructTokenURIParams {
         uint256 tokenId;
         address quoteTokenAddress;
@@ -40,7 +40,7 @@ library NFTDescriptor {
         uint24 fee;
         address poolAddress;
     }
-
+    ///构造token的URL
     function constructTokenURI(ConstructTokenURIParams memory params) public pure returns (string memory) {
         string memory name = generateName(params, feeToPercentString(params.fee));
         string memory descriptionPartOne =
@@ -185,26 +185,26 @@ library NFTDescriptor {
                 )
             );
     }
-
+    //精度字符串参数
     struct DecimalStringParams {
         // significant figures of decimal
         uint256 sigfigs;
-        // length of decimal string
+        // length of decimal string 大精度数据长度
         uint8 bufferLength;
         // ending index for significant figures (funtion works backwards when copying sigfigs)
         uint8 sigfigIndex;
-        // index of decimal place (0 if no decimal)
+        // index of decimal place (0 if no decimal) 精度位置索引
         uint8 decimalIndex;
         // start index for trailing/leading 0's for very small/large numbers
         uint8 zerosStartIndex;
-        // end index for trailing/leading 0's for very small/large numbers
+        // end index for trailing/leading 0's for very small/large numbers 
         uint8 zerosEndIndex;
-        // true if decimal number is less than one
+        // true if decimal number is less than one 是否小于1
         bool isLessThanOne;
-        // true if string should include "%"
+        // true if string should include "%" 是否包含百分比
         bool isPercent;
     }
-
+    //生成大精度数据字符串传
     function generateDecimalString(DecimalStringParams memory params) private pure returns (string memory) {
         bytes memory buffer = new bytes(params.bufferLength);
         if (params.isPercent) {

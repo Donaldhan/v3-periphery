@@ -11,11 +11,16 @@ import '../libraries/TransferHelper.sol';
 import './PeripheryImmutableState.sol';
 
 abstract contract PeripheryPayments is IPeripheryPayments, PeripheryImmutableState {
-    receive() external payable {
+    /**
+     * 接受eth
+     */    receive() external payable {
         require(msg.sender == WETH9, 'Not WETH9');
     }
 
     /// @inheritdoc IPeripheryPayments
+    /**
+     * 体现eth
+     */
     function unwrapWETH9(uint256 amountMinimum, address recipient) public payable override {
         uint256 balanceWETH9 = IWETH9(WETH9).balanceOf(address(this));
         require(balanceWETH9 >= amountMinimum, 'Insufficient WETH9');
@@ -27,6 +32,9 @@ abstract contract PeripheryPayments is IPeripheryPayments, PeripheryImmutableSta
     }
 
     /// @inheritdoc IPeripheryPayments
+     /**
+     *  转移所有的toknen给接收者
+     */
     function sweepToken(
         address token,
         uint256 amountMinimum,
@@ -41,14 +49,19 @@ abstract contract PeripheryPayments is IPeripheryPayments, PeripheryImmutableSta
     }
 
     /// @inheritdoc IPeripheryPayments
+     /**
+     * 退回ETH给消息发送者
+     */
     function refundETH() external payable override {
         if (address(this).balance > 0) TransferHelper.safeTransferETH(msg.sender, address(this).balance);
     }
-
-    /// @param token The token to pay
-    /// @param payer The entity that must pay
-    /// @param recipient The entity that will receive payment
-    /// @param value The amount to pay
+     /**
+     * 支付
+     */
+    /// @param token The token to pay 支付token
+    /// @param payer The entity that must pay 付款者
+    /// @param recipient The entity that will receive payment 接收者
+    /// @param value The amount to pay 付款数量
     function pay(
         address token,
         address payer,
@@ -56,7 +69,7 @@ abstract contract PeripheryPayments is IPeripheryPayments, PeripheryImmutableSta
         uint256 value
     ) internal {
         if (token == WETH9 && address(this).balance >= value) {
-            // pay with WETH9
+            // pay with WETH9 先质押，再转移
             IWETH9(WETH9).deposit{value: value}(); // wrap only what is needed to pay
             IWETH9(WETH9).transfer(recipient, value);
         } else if (payer == address(this)) {

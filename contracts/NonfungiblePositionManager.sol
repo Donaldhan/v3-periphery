@@ -18,7 +18,7 @@ import './base/PeripheryValidation.sol';
 import './base/SelfPermit.sol';
 import './base/PoolInitializer.sol';
 
-/// @title NFT positions
+/// @title NFT positions 基于位置NFT的流动性管理器
 /// @notice Wraps Uniswap V3 positions in the ERC721 non-fungible token interface
 contract NonfungiblePositionManager is
     INonfungiblePositionManager,
@@ -30,15 +30,15 @@ contract NonfungiblePositionManager is
     PeripheryValidation,
     SelfPermit
 {
-    // details about the uniswap position
+    // details about the uniswap position 位置详情信息
     struct Position {
-        // the nonce for permits
+        // the nonce for permits 允许nonce
         uint96 nonce;
-        // the address that is approved for spending this token
+        // the address that is approved for spending this token 操作者
         address operator;
-        // the ID of the pool with which this token is connected
+        // the ID of the pool with which this token is connected 池id
         uint80 poolId;
-        // the tick range of the position
+        // the tick range of the position 位置的tick上下限
         int24 tickLower;
         int24 tickUpper;
         // the liquidity of the position
@@ -51,21 +51,21 @@ contract NonfungiblePositionManager is
         uint128 tokensOwed1;
     }
 
-    /// @dev IDs of pools assigned by this contract
+    /// @dev IDs of pools assigned by this contract 交易池id
     mapping(address => uint80) private _poolIds;
 
-    /// @dev Pool keys by pool ID, to save on SSTOREs for position data
+    /// @dev Pool keys by pool ID, to save on SSTOREs for position data  交易池的PoolKey
     mapping(uint80 => PoolAddress.PoolKey) private _poolIdToPoolKey;
 
-    /// @dev The token ID position data
+    /// @dev The token ID position data token的位置信息
     mapping(uint256 => Position) private _positions;
 
-    /// @dev The ID of the next token that will be minted. Skips 0
+    /// @dev The ID of the next token that will be minted. Skips 0 下一个挖出token的id
     uint176 private _nextId = 1;
-    /// @dev The ID of the next pool that is used for the first time. Skips 0
+    /// @dev The ID of the next pool that is used for the first time. Skips 0 下一个交易池的id
     uint80 private _nextPoolId = 1;
 
-    /// @dev The address of the token descriptor contract, which handles generating token URIs for position tokens
+    /// @dev The address of the token descriptor contract, which handles generating token URIs for position tokens token描述合约
     address private immutable _tokenDescriptor;
 
     constructor(
@@ -76,7 +76,7 @@ contract NonfungiblePositionManager is
         _tokenDescriptor = _tokenDescriptor_;
     }
 
-    /// @inheritdoc INonfungiblePositionManager
+    /// @inheritdoc INonfungiblePositionManager tokenId的位置信息
     function positions(uint256 tokenId)
         external
         view
@@ -96,6 +96,7 @@ contract NonfungiblePositionManager is
             uint128 tokensOwed1
         )
     {
+        //tokenId位置信息
         Position memory position = _positions[tokenId];
         require(position.poolId != 0, 'Invalid token ID');
         PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
@@ -115,7 +116,7 @@ contract NonfungiblePositionManager is
         );
     }
 
-    /// @dev Caches a pool key
+    /// @dev Caches a pool key 缓存交易池key
     function cachePoolKey(address pool, PoolAddress.PoolKey memory poolKey) private returns (uint80 poolId) {
         poolId = _poolIds[pool];
         if (poolId == 0) {
@@ -124,12 +125,12 @@ contract NonfungiblePositionManager is
         }
     }
 
-    /// @inheritdoc INonfungiblePositionManager
+    /// @inheritdoc INonfungiblePositionManager  挖取流动性，并创建响应位置的NFT
     function mint(MintParams calldata params)
         external
         payable
         override
-        checkDeadline(params.deadline)
+        checkDeadline(params.deadline)  //检查时间
         returns (
             uint256 tokenId,
             uint128 liquidity,
@@ -138,6 +139,7 @@ contract NonfungiblePositionManager is
         )
     {
         IUniswapV3Pool pool;
+        //添加流动性
         (liquidity, amount0, amount1, pool) = addLiquidity(
             AddLiquidityParams({
                 token0: params.token0,
@@ -152,19 +154,20 @@ contract NonfungiblePositionManager is
                 amount1Min: params.amount1Min
             })
         );
-
+        //挖取NFT token 
         _mint(params.recipient, (tokenId = _nextId++));
-
+       //位置key
         bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);
+        //池位置信息
         (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
 
-        // idempotent set
+        // idempotent set 获取池id
         uint80 poolId =
             cachePoolKey(
                 address(pool),
                 PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee})
             );
-
+        //创建位置
         _positions[tokenId] = Position({
             nonce: 0,
             operator: address(0),
@@ -180,21 +183,21 @@ contract NonfungiblePositionManager is
 
         emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
     }
-
+    ///是否为授权者
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), 'Not approved');
         _;
     }
-
+    ///token URL
     function tokenURI(uint256 tokenId) public view override(ERC721, IERC721Metadata) returns (string memory) {
         require(_exists(tokenId));
         return INonfungibleTokenPositionDescriptor(_tokenDescriptor).tokenURI(this, tokenId);
     }
 
-    // save bytecode by removing implementation of unused method
+    // save bytecode by removing implementation of unused method 基本URL
     function baseURI() public pure override returns (string memory) {}
 
-    /// @inheritdoc INonfungiblePositionManager
+    /// @inheritdoc INonfungiblePositionManager 增加流动性
     function increaseLiquidity(IncreaseLiquidityParams calldata params)
         external
         payable
@@ -211,6 +214,7 @@ contract NonfungiblePositionManager is
         PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
 
         IUniswapV3Pool pool;
+        //增加流动性
         (liquidity, amount0, amount1, pool) = addLiquidity(
             AddLiquidityParams({
                 token0: poolKey.token0,
@@ -225,12 +229,12 @@ contract NonfungiblePositionManager is
                 recipient: address(this)
             })
         );
-
+        //计算位置key
         bytes32 positionKey = PositionKey.compute(address(this), position.tickLower, position.tickUpper);
 
         // this is now updated to the current transaction
         (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
-
+        //获取增加流动性后的，当前位置token0和token1的Own  
         position.tokensOwed0 += uint128(
             FullMath.mulDiv(
                 feeGrowthInside0LastX128 - position.feeGrowthInside0LastX128,
@@ -248,12 +252,13 @@ contract NonfungiblePositionManager is
 
         position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
         position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
+        //更新流动性
         position.liquidity += liquidity;
 
         emit IncreaseLiquidity(params.tokenId, liquidity, amount0, amount1);
     }
 
-    /// @inheritdoc INonfungiblePositionManager
+    /// @inheritdoc INonfungiblePositionManager 减少流动性
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable
@@ -270,6 +275,7 @@ contract NonfungiblePositionManager is
 
         PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
         IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
+        //销毁流动性
         (amount0, amount1) = pool.burn(position.tickLower, position.tickUpper, params.liquidity);
 
         require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
@@ -299,13 +305,13 @@ contract NonfungiblePositionManager is
 
         position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
         position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
-        // subtraction is safe because we checked positionLiquidity is gte params.liquidity
+        // subtraction is safe because we checked positionLiquidity is gte params.liquidity 减少流动性
         position.liquidity = positionLiquidity - params.liquidity;
 
         emit DecreaseLiquidity(params.tokenId, params.liquidity, amount0, amount1);
     }
 
-    /// @inheritdoc INonfungiblePositionManager
+    /// @inheritdoc INonfungiblePositionManager 收集，回收
     function collect(CollectParams calldata params)
         external
         payable
@@ -357,7 +363,7 @@ contract NonfungiblePositionManager is
                 params.amount1Max > tokensOwed1 ? tokensOwed1 : params.amount1Max
             );
 
-        // the actual amounts collected are returned
+        // the actual amounts collected are returned 回收流动性
         (amount0, amount1) = pool.collect(
             recipient,
             position.tickLower,
@@ -373,7 +379,7 @@ contract NonfungiblePositionManager is
         emit Collect(params.tokenId, recipient, amount0Collect, amount1Collect);
     }
 
-    /// @inheritdoc INonfungiblePositionManager
+    /// @inheritdoc INonfungiblePositionManager 销毁token
     function burn(uint256 tokenId) external payable override isAuthorizedForToken(tokenId) {
         Position storage position = _positions[tokenId];
         require(position.liquidity == 0 && position.tokensOwed0 == 0 && position.tokensOwed1 == 0, 'Not cleared');
@@ -392,7 +398,7 @@ contract NonfungiblePositionManager is
         return _positions[tokenId].operator;
     }
 
-    /// @dev Overrides _approve to use the operator in the position, which is packed with the position permit nonce
+    /// @dev Overrides _approve to use the operator in the position, which is packed with the position permit nonce 授权
     function _approve(address to, uint256 tokenId) internal override(ERC721) {
         _positions[tokenId].operator = to;
         emit Approval(ownerOf(tokenId), to, tokenId);

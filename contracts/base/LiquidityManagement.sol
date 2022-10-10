@@ -13,27 +13,29 @@ import '../libraries/LiquidityAmounts.sol';
 import './PeripheryPayments.sol';
 import './PeripheryImmutableState.sol';
 
-/// @title Liquidity management functions
+/// @title Liquidity management functions 流动性管理功能，挖取流动性回调和添加流动性
 /// @notice Internal functions for safely managing liquidity in Uniswap V3
 abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmutableState, PeripheryPayments {
+    //mint流动性回调数据
     struct MintCallbackData {
         PoolAddress.PoolKey poolKey;
         address payer;
     }
 
-    /// @inheritdoc IUniswapV3MintCallback
+    /// @inheritdoc IUniswapV3MintCallback 挖取流动性回调
     function uniswapV3MintCallback(
         uint256 amount0Owed,
         uint256 amount1Owed,
         bytes calldata data
     ) external override {
+        //验证回调结果
         MintCallbackData memory decoded = abi.decode(data, (MintCallbackData));
         CallbackValidation.verifyCallback(factory, decoded.poolKey);
-
+        //转账给定数量的token给交易发送者
         if (amount0Owed > 0) pay(decoded.poolKey.token0, decoded.payer, msg.sender, amount0Owed);
         if (amount1Owed > 0) pay(decoded.poolKey.token1, decoded.payer, msg.sender, amount1Owed);
     }
-
+    //添加流动性参数
     struct AddLiquidityParams {
         address token0;
         address token1;
@@ -57,12 +59,13 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
             IUniswapV3Pool pool
         )
     {
+        //池地址key
         PoolAddress.PoolKey memory poolKey =
             PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
-
+        //池地址
         pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
 
-        // compute the liquidity amount
+        // compute the liquidity amount 计算流动性
         {
             (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
             uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
@@ -76,7 +79,7 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
                 params.amount1Desired
             );
         }
-
+        //挖取流动性
         (amount0, amount1) = pool.mint(
             params.recipient,
             params.tickLower,
