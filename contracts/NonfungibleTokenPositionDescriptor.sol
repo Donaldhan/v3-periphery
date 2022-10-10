@@ -24,7 +24,7 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
     address private constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
 
     address public immutable WETH9;
-    /// @dev A null-terminated string
+    /// @dev A null-terminated string  本地货币label
     bytes32 public immutable nativeCurrencyLabelBytes;
 
     constructor(address _WETH9, bytes32 _nativeCurrencyLabelBytes) {
@@ -32,7 +32,7 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
         nativeCurrencyLabelBytes = _nativeCurrencyLabelBytes;
     }
 
-    /// @notice Returns the native currency label as a string
+    /// @notice Returns the native currency label as a string 当前本地label
     function nativeCurrencyLabel() public view returns (string memory) {
         uint256 len = 0;
         while (len < 32 && nativeCurrencyLabelBytes[len] != 0) {
@@ -45,16 +45,17 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
         return string(b);
     }
 
-    /// @inheritdoc INonfungibleTokenPositionDescriptor
+    /// @inheritdoc INonfungibleTokenPositionDescriptor token url
     function tokenURI(INonfungiblePositionManager positionManager, uint256 tokenId)
         external
         view
         override
         returns (string memory)
     {
+        //位置信息
         (, , address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, , , , , ) =
             positionManager.positions(tokenId);
-
+        //交易池
         IUniswapV3Pool pool =
             IUniswapV3Pool(
                 PoolAddress.computeAddress(
@@ -62,7 +63,7 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
                     PoolAddress.PoolKey({token0: token0, token1: token1, fee: fee})
                 )
             );
-
+        //是否需要调转
         bool _flipRatio = flipRatio(token0, token1, ChainId.get());
         address quoteTokenAddress = !_flipRatio ? token1 : token0;
         address baseTokenAddress = !_flipRatio ? token0 : token1;
@@ -92,7 +93,9 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
                 })
             );
     }
-
+   /**
+    * 是否需要调转
+    */
     function flipRatio(
         address token0,
         address token1,
@@ -100,21 +103,22 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
     ) public view returns (bool) {
         return tokenRatioPriority(token0, chainId) > tokenRatioPriority(token1, chainId);
     }
-
+    /**
+     */
     function tokenRatioPriority(address token, uint256 chainId) public view returns (int256) {
-        if (token == WETH9) {
+        if (token == WETH9) {//eth
             return TokenRatioSortOrder.DENOMINATOR;
         }
         if (chainId == 1) {
             if (token == USDC) {
                 return TokenRatioSortOrder.NUMERATOR_MOST;
-            } else if (token == USDT) {
+            } else if (token == USDT) {//分子
                 return TokenRatioSortOrder.NUMERATOR_MORE;
-            } else if (token == DAI) {
+            } else if (token == DAI) {//分子
                 return TokenRatioSortOrder.NUMERATOR;
-            } else if (token == TBTC) {
+            } else if (token == TBTC) {// 分母
                 return TokenRatioSortOrder.DENOMINATOR_MORE;
-            } else if (token == WBTC) {
+            } else if (token == WBTC) {// 分母
                 return TokenRatioSortOrder.DENOMINATOR_MOST;
             } else {
                 return 0;
