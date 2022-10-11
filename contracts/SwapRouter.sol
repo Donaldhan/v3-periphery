@@ -86,21 +86,28 @@ contract SwapRouter is
             }
         }
     }
-
-    /// @dev Performs a single exact input swap
+    // allow swapping to the router address with address 0 接收者允许swap接收者为路由地址，主要考虑针对swap的token0，token1，存在交易池时的情况
+    //多路径的的情况编码为：token0+fee01+token1+fee12+token2+fee23+token3+fee34+token4+..., 这种是针对swap是如果没有对应的交易对pair，则从不同的
+    // 交易池进行swap， 比如使用token0，想swap token3，整个swap的路径为（token0+fee01+token1，token1+fee12+token2，token2+fee23+token3），使用token0从
+    // pool01中swap出token1，使用swap出的token1从pool12中swap出token2， 使用swap出的token2从pool23中swap出token3；
+    /// @dev Performs a single exact input swap  执行单个swap
+    /// 此处swap的时候，如果不存在可以通过uniswapV3SwapCallback回调继续沿路径进行swap，直到swap处理想要的token
     function exactInputInternal(
         uint256 amountIn,
         address recipient,
         uint160 sqrtPriceLimitX96,
         SwapCallbackData memory data
     ) private returns (uint256 amountOut) {
-        // allow swapping to the router address with address 0
+        // allow swapping to the router address with address 0 接收者允许swap接收者为路由地址，主要考虑针对swap的token0，token1，不存在交易池时的情况
+        //多路径的的情况编码为：token0+fee01+token1+fee12+token2+fee23+token3+fee34+token4+..., 这种是针对swap是如果没有对应的交易对pair，则从不同的
+        // 交易池进行swap， 比如使用token0，想swap token3，整个swap的路径为（token0+fee01+token1，token1+fee12+token2，token2+fee23+token3），使用token0从
+        // pool01中swap出token1，使用swap出的token1从pool12中swap出token2， 使用swap出的token2从pool23中swap出token3；
         if (recipient == address(0)) recipient = address(this);
-
+        //第一个交易池
         (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
 
         bool zeroForOne = tokenIn < tokenOut;
-
+        //从交易池使用tokenIn，swap处理tokenOut
         (int256 amount0, int256 amount1) =
             getPool(tokenIn, tokenOut, fee).swap(
                 recipient,
@@ -115,7 +122,7 @@ contract SwapRouter is
         return uint256(-(zeroForOne ? amount1 : amount0));
     }
 
-    /// @inheritdoc ISwapRouter
+    /// @inheritdoc ISwapRouter 执行单个swap
     function exactInputSingle(ExactInputSingleParams calldata params)
         external
         payable
@@ -132,7 +139,7 @@ contract SwapRouter is
         require(amountOut >= params.amountOutMinimum, 'Too little received');
     }
 
-    /// @inheritdoc ISwapRouter
+    /// @inheritdoc ISwapRouter 执行带路径的swap
     function exactInput(ExactInputParams memory params)
         external
         payable
@@ -143,9 +150,10 @@ contract SwapRouter is
         address payer = msg.sender; // msg.sender pays for the first hop
 
         while (true) {
+            //路径中是否有多个交易池
             bool hasMultiplePools = params.path.hasMultiplePools();
 
-            // the outputs of prior swaps become the inputs to subsequent ones
+            // the outputs of prior swaps become the inputs to subsequent ones 执行内部swap
             params.amountIn = exactInputInternal(
                 params.amountIn,
                 hasMultiplePools ? address(this) : params.recipient, // for intermediate swaps, this contract custodies
@@ -157,10 +165,10 @@ contract SwapRouter is
             );
 
             // decide whether to continue or terminate
-            if (hasMultiplePools) {
+            if (hasMultiplePools) {//路径中存在多个交易池
                 payer = address(this); // at this point, the caller has paid
                 params.path = params.path.skipToken();
-            } else {
+            } else {//单个直接结束
                 amountOut = params.amountIn;
                 break;
             }
@@ -169,20 +177,23 @@ contract SwapRouter is
         require(amountOut >= params.amountOutMinimum, 'Too little received');
     }
 
-    /// @dev Performs a single exact output swap
+    /// @dev Performs a single exact output swap 执行内部swap评估操作
     function exactOutputInternal(
         uint256 amountOut,
         address recipient,
         uint160 sqrtPriceLimitX96,
         SwapCallbackData memory data
     ) private returns (uint256 amountIn) {
-        // allow swapping to the router address with address 0
+         // allow swapping to the router address with address 0 接收者允许swap接收者为路由地址，主要考虑针对swap的token0，token1，不存在交易池时的情况
+        //多路径的的情况编码为：token0+fee01+token1+fee12+token2+fee23+token3+fee34+token4+..., 这种是针对swap是如果没有对应的交易对pair，则从不同的
+        // 交易池进行swap， 比如使用token0，想swap token3，整个swap的路径为（token0+fee01+token1，token1+fee12+token2，token2+fee23+token3），使用token0从
+        // pool01中swap出token1，使用swap出的token1从pool12中swap出token2， 使用swap出的token2从pool23中swap出token3；
         if (recipient == address(0)) recipient = address(this);
-
+        
         (address tokenOut, address tokenIn, uint24 fee) = data.path.decodeFirstPool();
 
         bool zeroForOne = tokenIn < tokenOut;
-
+        //swap
         (int256 amount0Delta, int256 amount1Delta) =
             getPool(tokenIn, tokenOut, fee).swap(
                 recipient,
@@ -203,7 +214,7 @@ contract SwapRouter is
         if (sqrtPriceLimitX96 == 0) require(amountOutReceived == amountOut);
     }
 
-    /// @inheritdoc ISwapRouter
+    /// @inheritdoc ISwapRouter  执行单个swap评估操作
     function exactOutputSingle(ExactOutputSingleParams calldata params)
         external
         payable
@@ -224,7 +235,7 @@ contract SwapRouter is
         amountInCached = DEFAULT_AMOUNT_IN_CACHED;
     }
 
-    /// @inheritdoc ISwapRouter
+    /// @inheritdoc ISwapRouter 根据路径执行swap out评估，置换出tokenOut，需要输入的tokenIn数量
     function exactOutput(ExactOutputParams calldata params)
         external
         payable
