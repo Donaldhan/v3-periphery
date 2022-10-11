@@ -17,7 +17,7 @@ import './libraries/PoolAddress.sol';
 import './libraries/CallbackValidation.sol';
 import './interfaces/external/IWETH9.sol';
 
-/// @title Uniswap V3 Swap Router
+/// @title Uniswap V3 Swap Router 路由
 /// @notice Router for stateless execution of swaps against Uniswap V3
 contract SwapRouter is
     ISwapRouter,
@@ -31,15 +31,15 @@ contract SwapRouter is
     using SafeCast for uint256;
 
     /// @dev Used as the placeholder value for amountInCached, because the computed amount in for an exact output swap
-    /// can never actually be this value
+    /// can never actually be this value 输入数量最大值
     uint256 private constant DEFAULT_AMOUNT_IN_CACHED = type(uint256).max;
 
-    /// @dev Transient storage variable used for returning the computed amount in for an exact output swap.
+    /// @dev Transient storage variable used for returning the computed amount in for an exact output swap. 
     uint256 private amountInCached = DEFAULT_AMOUNT_IN_CACHED;
 
     constructor(address _factory, address _WETH9) PeripheryImmutableState(_factory, _WETH9) {}
 
-    /// @dev Returns the pool for the given token pair and fee. The pool contract may or may not exist.
+    /// @dev Returns the pool for the given token pair and fee. The pool contract may or may not exist. 获取交易池地址
     function getPool(
         address tokenA,
         address tokenB,
@@ -47,32 +47,36 @@ contract SwapRouter is
     ) private view returns (IUniswapV3Pool) {
         return IUniswapV3Pool(PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, fee)));
     }
-
+    //swap 回调数据
     struct SwapCallbackData {
-        bytes path;
-        address payer;
+        bytes path; //路径
+        address payer; //支付者
     }
 
-    /// @inheritdoc IUniswapV3SwapCallback
+    /// @inheritdoc IUniswapV3SwapCallback swap回调
     function uniswapV3SwapCallback(
         int256 amount0Delta,
         int256 amount1Delta,
         bytes calldata _data
     ) external override {
         require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
+        //解析回调数据
         SwapCallbackData memory data = abi.decode(_data, (SwapCallbackData));
+        //从回调data中解析出一个交易池信息
         (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
+        //验证swap回调
         CallbackValidation.verifyCallback(factory, tokenIn, tokenOut, fee);
-
+        //
         (bool isExactInput, uint256 amountToPay) =
             amount0Delta > 0
                 ? (tokenIn < tokenOut, uint256(amount0Delta))
                 : (tokenOut < tokenIn, uint256(amount1Delta));
-        if (isExactInput) {
+        if (isExactInput) {//swap input 操作，添加流动性
             pay(tokenIn, data.payer, msg.sender, amountToPay);
         } else {
             // either initiate the next swap or pay
-            if (data.path.hasMultiplePools()) {
+            if (data.path.hasMultiplePools()) {//路径中包含多个交易池
+               //跳过token
                 data.path = data.path.skipToken();
                 exactOutputInternal(amountToPay, msg.sender, 0, data);
             } else {

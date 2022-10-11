@@ -30,7 +30,7 @@ abstract contract PeripheryPaymentsWithFee is PeripheryPayments, IPeripheryPayme
 
         if (balanceWETH9 > 0) {
             IWETH9(WETH9).withdraw(balanceWETH9);
-            //计算手续费 ？？？ 10_000
+            //计算手续费 ？？？ 10_000（0:uint256: 101000，_为分割符）
             uint256 feeAmount = balanceWETH9.mul(feeBips) / 10_000; ///???
             if (feeAmount > 0) TransferHelper.safeTransferETH(feeRecipient, feeAmount);
             TransferHelper.safeTransferETH(recipient, balanceWETH9 - feeAmount);
@@ -52,7 +52,7 @@ abstract contract PeripheryPaymentsWithFee is PeripheryPayments, IPeripheryPayme
         require(balanceToken >= amountMinimum, 'Insufficient token');
 
         if (balanceToken > 0) {
-            //计算手续费 ？？？ 10_000
+            //计算手续费 ？？？ 10_000（0:uint256: 101000，_为分割符）
             uint256 feeAmount = balanceToken.mul(feeBips) / 10_000;
             if (feeAmount > 0) TransferHelper.safeTransfer(token, feeRecipient, feeAmount);
             TransferHelper.safeTransfer(token, recipient, balanceToken - feeAmount);

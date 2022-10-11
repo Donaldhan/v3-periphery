@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * @title Solidity Bytes Arrays Utils
+ * @title Solidity Bytes Arrays Utils  bytes数组工具包
  * @author Gonçalo Sá <goncalo.sa@consensys.net>
  *
  * @dev Bytes tightly packed arrays utility library for ethereum contracts written in Solidity.
@@ -74,7 +74,9 @@ library BytesLib {
 
         return tempBytes;
     }
-
+    /**
+     * 转换为地址：20字节
+     */
     function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
         require(_start + 20 >= _start, 'toAddress_overflow');
         require(_bytes.length >= _start + 20, 'toAddress_outOfBounds');
@@ -86,7 +88,9 @@ library BytesLib {
 
         return tempAddress;
     }
-
+    /**
+     * 转换为费用fee, 3字节
+     */
     function toUint24(bytes memory _bytes, uint256 _start) internal pure returns (uint24) {
         require(_start + 3 >= _start, 'toUint24_overflow');
         require(_bytes.length >= _start + 3, 'toUint24_outOfBounds');
