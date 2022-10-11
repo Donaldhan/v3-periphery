@@ -1,4 +1,5 @@
 * INonfungiblePositionManager:非同质位置管理器，提供流动mint，增加，减少操作，以及收益费用的收集；在mint流动性时，同时会创建基于位置的NFT；
+* NonfungibleTokenPositionDescriptor:提供生成位置NFT描述URL；
 * SwapRouter: swap操作：根据输入token，swap出尽可能大的另一个token；swap评估操作：根据输入的token数量，需要输入的最小另外一个token的数量；
 
 多路径的的情况编码为：token0+fee01+token1+fee12+token2+fee23+token3+fee34+token4+..., 这种是针对swap是如果没有对应的交易对pair，则从不同的
@@ -16,7 +17,3 @@ Multicall：批量调用代理合约；
 
 
 
-
-# TODO
-
-NonfungiblePositionManager
